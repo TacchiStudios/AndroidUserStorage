@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven' // ADD THIS
+apply plugin: 'base'
 
 //apply plugin: 'maven'
 
