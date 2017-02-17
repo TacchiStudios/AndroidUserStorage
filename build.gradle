@@ -4,6 +4,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.2.1'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
     }
 }
 
@@ -11,39 +12,4 @@ allprojects {
     repositories {
         jcenter()
     }
-}
-
-
-
-
-apply plugin: 'com.android.library'
-apply plugin: 'maven'
-
-group = 'com.github.TacchiStudios'
-
-dependencies {
-	//compile 'com.android.support:support-v4:23.3.0'
-	compile 'com.android.support:support-annotations:+'
-}
-
-android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
-
-		defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
-      //  consumerProguardFiles 'proguard-rules.pro'
-    }
-}
-
-
-task sourcesJar(type: Jar) {
-		from android.sourceSets.main.java.srcDirs
-}
-
-artifacts {
-    archives sourcesJar
 }

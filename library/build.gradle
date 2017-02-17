@@ -1,0 +1,32 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven' // ADD THIS
+
+//apply plugin: 'maven'
+
+group = 'com.github.TacchiStudios'
+
+dependencies {
+	compile 'com.android.support:support-annotations:+'
+}
+
+android {
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
+
+		defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+      //  consumerProguardFiles 'proguard-rules.pro'
+    }
+}
+
+
+task sourcesJar(type: Jar) {
+		from android.sourceSets.main.java.srcDirs
+}
+
+artifacts {
+    archives sourcesJar
+}
