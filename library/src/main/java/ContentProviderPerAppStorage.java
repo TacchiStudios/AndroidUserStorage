@@ -2,31 +2,30 @@ package com.tacchistudios.androiduserstorage;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
+import android.content.pm.ProviderInfo;
+import android.database.Cursor;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
+
+import com.tacchistudios.androiduserstorage.ContentProvider;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
-public class SharedPrefsPerAppStorage implements User.Storage {
-    private static final String TAG = SharedPrefsPerAppStorage.class.getSimpleName();
-
-    private final String APP_IDS_PREFS_NAME = "com.tacchistudios.user.storage.app_ids"; // Both the name of the sharedprefs for the apps, and the key for the array of IDs that are logged in
+public class ContentProviderPerAppStorage implements User.Storage {
+    private static final String TAG = ContentProviderPerAppStorage.class.getSimpleName();
 
     private Context context;
 
-    //TODO: the context is a strong requirement, so should it just be in the constructor?
-    public void setContext(Context _context) {
+    public ContentProviderPerAppStorage(Context _context) {
         context = _context;
-    }
-    public Context getContext() {
-        return context;
     }
 
     @Override
@@ -52,11 +51,6 @@ public class SharedPrefsPerAppStorage implements User.Storage {
         editor.commit();
 
         Log.d(TAG, "Put: " + jsonString);
-
-        // Also log that we have a token so other apps can discover it.
-        Set<String> appIds = appIDsForSeparatedAppsWithTokens();
-        appIds.add(context.getPackageName());
-        setAppIDsForSeparatedAppsWithTokens(appIds);
     }
 
     @Nullable
@@ -117,22 +111,18 @@ public class SharedPrefsPerAppStorage implements User.Storage {
     public Set<User.TokenDetails> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp() {
         Set<User.TokenDetails> tokenDetailsSet = new HashSet<>();
 
-        Set<String> appIds = appIDsForSeparatedAppsWithTokens();
-        appIds.remove(context.getPackageName()); // TODO: Check this actually works. Does it do on String value, or reference?
+        Set<String> appIds = appIDsForSeparatedAppsWithContentProviders();
 
         for (String appId : appIds) {
             // Get the token etc for each app ID (if email exists)
-            JSONObject tokenDetails = tokenDetailsForPackageName(appId);
-            if (tokenDetails != null) {
-                try {
-                    String email = tokenDetails.getString(EMAIL);
-                    if (email != null) { // Need to check email so that anonymous sessions aren't included, as they can't be exchanged.
 
-                        tokenDetailsSet.add(new User.TokenDetails(appId, tokenDetails.getString(TOKEN), email, tokenDetails.getString(PASSWORD)));
-                    }
-                } catch (JSONException e) {
-                    Log.e(TAG, e.getLocalizedMessage());
-                    // Just continue and give another tokenDetails a chance
+            // Use the AppID in the query...
+            Cursor cursor = context.getContentResolver().query(ContentProvider.tokenURIForPackageName(appId), null, null, null, null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                String email = cursor.getString(cursor.getColumnIndex(EMAIL));
+                if (email != null) { // Need to check email so that anonymous sessions aren't included, as they can't be exchanged.
+                    tokenDetailsSet.add(new User.TokenDetails(cursor.getString(cursor.getColumnIndex("package")), cursor.getString(cursor.getColumnIndex(TOKEN)), email, cursor.getString(cursor.getColumnIndex(PASSWORD))));
                 }
             }
         }
@@ -144,25 +134,29 @@ public class SharedPrefsPerAppStorage implements User.Storage {
         return null;
     }
 
-    @NonNull
-    private Set<String> appIDsForSeparatedAppsWithTokens() {
-        Set<String> set = prefs().getStringSet(APP_IDS_PREFS_NAME, new HashSet<String>());
-        Log.d(TAG, "appIDsForSeparatedAppsWithTokens: " + set.toString());
-        return set;
-    }
+    private Set<String> appIDsForSeparatedAppsWithContentProviders() {
+        List<ProviderInfo> providers = context.getPackageManager()
+                .queryContentProviders(null, 0, 0);
 
-    private void setAppIDsForSeparatedAppsWithTokens(Set<String> appIds) {
-        boolean success = prefs().edit().putStringSet(APP_IDS_PREFS_NAME, appIds).commit();
+        Set<String> appIDs = new HashSet<>();
 
-        if (!success) {
-            Log.e(TAG, "setAppIDsForSeparatedAppsWithTokens failed for appIds:" + appIds.toString());
+        for (ProviderInfo provider : providers) {
+
+//            if (provider.authority.contains("com.espritline.androiduserstorage")) { // This package needs to be an option for this class
+            if (provider.name.contains("com.tacchistudios.androiduserstorage.ContentProvider") && !provider.authority.contains(context.getPackageName())) {
+                Log.d(TAG, "Provider: " + provider.toString() + ", authority: " + provider.authority);
+
+                appIDs.add(provider.authority);
+            }
         }
+
+        Log.d(TAG, "AppIDs: " + appIDs.toString());
+
+        return appIDs;
     }
 
     public SharedPreferences prefs() {
-        // PreferenceManager.getDefaultSharedPreferences(context) wouldn't work, because it uses the application's package, which the other apps can't know without some hardcoding.
-
-        SharedPreferences prefs = context.getSharedPreferences(APP_IDS_PREFS_NAME, Context.MODE_PRIVATE); // Private because it can still be accessed from other apps with the same User ID
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs;
     }
 }

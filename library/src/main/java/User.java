@@ -97,7 +97,7 @@ public class User {
         String getEmail();
         String getPassword();
 
-        Set<JSONObject> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp();
+        Set<TokenDetails> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp();
     }
 
     public class OAuthRequest {
@@ -107,5 +107,19 @@ public class User {
         public String grant_type = "password";
         public String username;
         public String password;
+    }
+
+    public static class TokenDetails {
+        public String packageName;
+        public String token;
+        public String email;
+        public String password;
+
+        public TokenDetails(String _package, String _token, String _email, String _password) {
+            packageName = _package;
+            token = _token;
+            email = _email;
+            password = _password;
+        }
     }
 }
