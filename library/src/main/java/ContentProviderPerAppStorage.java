@@ -4,11 +4,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
+import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
-
-import com.tacchistudios.androiduserstorage.ContentProvider;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -116,14 +115,24 @@ public class ContentProviderPerAppStorage implements User.Storage {
         for (String appId : appIds) {
             // Get the token etc for each app ID (if email exists)
 
+            Log.d(TAG, "Getting token details for: " + appId);
+
+            Uri uri = ContentProvider.tokenURIForAuthority(appId);
+
+            Log.d(TAG, "Getting cursor for Uri: " + uri.toString());
+
             // Use the AppID in the query...
-            Cursor cursor = context.getContentResolver().query(ContentProvider.tokenURIForPackageName(appId), null, null, null, null);
+            Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
             if (cursor != null && cursor.moveToFirst()) {
+                Log.d(TAG, "Got cursor");
+
                 String email = cursor.getString(cursor.getColumnIndex(EMAIL));
                 if (email != null) { // Need to check email so that anonymous sessions aren't included, as they can't be exchanged.
                     tokenDetailsSet.add(new User.TokenDetails(cursor.getString(cursor.getColumnIndex("package")), cursor.getString(cursor.getColumnIndex(TOKEN)), email, cursor.getString(cursor.getColumnIndex(PASSWORD))));
                 }
+            } else {
+                Log.d(TAG, "User not logged in for: " + uri.toString());
             }
         }
 
