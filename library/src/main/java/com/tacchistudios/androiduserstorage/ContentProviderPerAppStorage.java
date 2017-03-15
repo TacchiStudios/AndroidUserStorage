@@ -35,8 +35,7 @@ public class ContentProviderPerAppStorage implements User.Storage {
         Log.d(TAG, "setTokenDetails: " + token);
 
         if (token == null) {
-            // We're logging out, and want to clear *all* oauth tokens and related info from the sharedprefs this app group uses.
-            prefs().edit().clear().apply();
+            clearAllTokens();
             return;
         }
 
@@ -53,6 +52,23 @@ public class ContentProviderPerAppStorage implements User.Storage {
         editor.commit();
 
         Log.d(TAG, "Put: " + jsonString);
+    }
+
+    private void clearAllTokens() {
+        // We're logging out, and want to clear *all* oauth tokens and related info from the ContentProviders this app group uses.
+
+        // So we start with the local...
+        SharedPreferences.Editor editor = prefs().edit();
+        editor.remove(context.getPackageName()); // Store the token, email, password in the package name of this app
+        editor.commit();
+
+        // Then clear all for ContentProviders
+        Set<String> appIds = appIDsForSeparatedAppsWithContentProviders();
+        for (String appId : appIds) {
+            Uri uri = ContentProvider.clearTokenURIForAuthority(appId);
+            int returnValue = context.getContentResolver().delete(uri, null, null);
+            // TBH this is probably all we need to do?
+        }
     }
 
     @Nullable
@@ -81,7 +97,7 @@ public class ContentProviderPerAppStorage implements User.Storage {
         try {
             return tokenDetails().getString(TOKEN);
         } catch (Exception e) {
-            Log.e(TAG, e.getLocalizedMessage());
+//            Log.e(TAG, e.getLocalizedMessage());
             return null;
         }
     }
@@ -92,7 +108,7 @@ public class ContentProviderPerAppStorage implements User.Storage {
         try {
             return tokenDetails().getString(EMAIL);
         } catch (Exception e) {
-            Log.e(TAG, e.getLocalizedMessage());
+//            Log.e(TAG, e.getLocalizedMessage());
             return null;
         }
     }
@@ -103,7 +119,7 @@ public class ContentProviderPerAppStorage implements User.Storage {
         try {
             return tokenDetails().getString(PASSWORD);
         } catch (Exception e) {
-            Log.e(TAG, e.getLocalizedMessage());
+//            Log.e(TAG, e.getLocalizedMessage());
             return null;
         }
     }
@@ -139,6 +155,16 @@ public class ContentProviderPerAppStorage implements User.Storage {
 
         if (!tokenDetailsSet.isEmpty()) {
             return tokenDetailsSet;
+        }
+
+        return null;
+    }
+
+    // Returns any exchangeable token details
+    public User.TokenDetails tokenDetailsThatCanBeExchangedForTokenForCurrentApp() {
+        Set<User.TokenDetails> set = tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp();
+        if (set != null && !set.isEmpty()) {
+            return (User.TokenDetails) set.toArray()[0]; // Any object should be fine.
         }
 
         return null;
