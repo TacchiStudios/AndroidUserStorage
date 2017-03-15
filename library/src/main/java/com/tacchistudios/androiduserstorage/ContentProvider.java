@@ -32,8 +32,9 @@ public class ContentProvider extends android.content.ContentProvider {
     }
 
     void setupUserStorage() {
-        Log.e(TAG, "This must be overridden in a subclass that you define.");
-
+        // By default we use content provider storage, but this can be overridden in a subclass if needed.
+        ContentProviderPerAppStorage storage = new ContentProviderPerAppStorage(getContext());
+        User.getInstance().setStorage(storage);
     }
 
     @Nullable
@@ -59,11 +60,12 @@ public class ContentProvider extends android.content.ContentProvider {
 
                 Log.d(TAG, "User logged in, so sharing with other app: " + User.getInstance().oAuthToken());
 
-                MatrixCursor cursor = new MatrixCursor(new String[]{"package", TOKEN, EMAIL, PASSWORD});
+                MatrixCursor cursor = new MatrixCursor(new String[]{"package", TOKEN, EMAIL, PASSWORD}); // Is package needed?
 
                 // Get details from prefs
                 User.Storage storage = User.getInstance().getStorage();
                 cursor.addRow(new String[]{getContext().getPackageName(), storage.getToken(), storage.getEmail(), storage.getPassword()});
+                cursor.close();
 
                 return cursor;
             default:
@@ -71,6 +73,8 @@ public class ContentProvider extends android.content.ContentProvider {
         }
     }
 
+
+    // These methods are unused as we don't support CUD (of CRUD)
     @Nullable
     @Override
     public String getType(@NonNull Uri uri) {

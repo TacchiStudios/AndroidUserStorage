@@ -22,6 +22,9 @@ public class ContentProviderPerAppStorage implements User.Storage {
     private static final String TAG = ContentProviderPerAppStorage.class.getSimpleName();
 
     private Context context;
+    public Context getContext() {
+        return context;
+    }
 
     public ContentProviderPerAppStorage(Context _context) {
         context = _context;
@@ -115,17 +118,15 @@ public class ContentProviderPerAppStorage implements User.Storage {
         for (String appId : appIds) {
             // Get the token etc for each app ID (if email exists)
 
-            Log.d(TAG, "Getting token details for: " + appId);
-
             Uri uri = ContentProvider.tokenURIForAuthority(appId);
 
-            Log.d(TAG, "Getting cursor for Uri: " + uri.toString());
+            Log.d(TAG, "Getting token cursor for Uri: " + uri.toString());
 
             // Use the AppID in the query...
             Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
             if (cursor != null && cursor.moveToFirst()) {
-                Log.d(TAG, "Got cursor");
+                Log.d(TAG, "User logged in. Got cursor for: " + uri.toString());
 
                 String email = cursor.getString(cursor.getColumnIndex(EMAIL));
                 if (email != null) { // Need to check email so that anonymous sessions aren't included, as they can't be exchanged.
@@ -144,16 +145,13 @@ public class ContentProviderPerAppStorage implements User.Storage {
     }
 
     private Set<String> appIDsForSeparatedAppsWithContentProviders() {
-        List<ProviderInfo> providers = context.getPackageManager()
-                .queryContentProviders(null, 0, 0);
+        List<ProviderInfo> providers = context.getPackageManager().queryContentProviders(null, 0, 0);
 
         Set<String> appIDs = new HashSet<>();
 
         for (ProviderInfo provider : providers) {
-
-//            if (provider.authority.contains("com.espritline.androiduserstorage")) { // This package needs to be an option for this class
             if (provider.name.contains("com.tacchistudios.androiduserstorage.ContentProvider") && !provider.authority.contains(context.getPackageName())) {
-                Log.d(TAG, "Provider: " + provider.toString() + ", authority: " + provider.authority);
+//                Log.d(TAG, "Provider: " + provider.toString());
 
                 appIDs.add(provider.authority);
             }
