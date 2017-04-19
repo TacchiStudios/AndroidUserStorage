@@ -67,7 +67,6 @@ public class ContentProviderPerAppStorage implements User.Storage {
         for (String appId : appIds) {
             Uri uri = ContentProvider.clearTokenURIForAuthority(appId);
             int returnValue = context.getContentResolver().delete(uri, null, null);
-            // TBH this is probably all we need to do?
         }
     }
 
@@ -97,7 +96,6 @@ public class ContentProviderPerAppStorage implements User.Storage {
         try {
             return tokenDetails().getString(TOKEN);
         } catch (Exception e) {
-//            Log.e(TAG, e.getLocalizedMessage());
             return null;
         }
     }
@@ -108,7 +106,6 @@ public class ContentProviderPerAppStorage implements User.Storage {
         try {
             return tokenDetails().getString(EMAIL);
         } catch (Exception e) {
-//            Log.e(TAG, e.getLocalizedMessage());
             return null;
         }
     }
@@ -119,14 +116,12 @@ public class ContentProviderPerAppStorage implements User.Storage {
         try {
             return tokenDetails().getString(PASSWORD);
         } catch (Exception e) {
-//            Log.e(TAG, e.getLocalizedMessage());
             return null;
         }
     }
 
-    @Override
     @Nullable
-    public Set<User.TokenDetails> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp() {
+    private Set<User.TokenDetails> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp() {
         Set<User.TokenDetails> tokenDetailsSet = new HashSet<>();
 
         Set<String> appIds = appIDsForSeparatedAppsWithContentProviders();
@@ -160,13 +155,17 @@ public class ContentProviderPerAppStorage implements User.Storage {
         return null;
     }
 
-    // Returns any exchangeable token details
-    public User.TokenDetails tokenDetailsThatCanBeExchangedForTokenForCurrentApp() {
+    @Override
+    public boolean areExchangableTokensAvailable() {
+        return anyAvailableExchangeableTokenDetails() != null;
+    }
+
+    @Override
+    public User.TokenDetails anyAvailableExchangeableTokenDetails() {
         Set<User.TokenDetails> set = tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp();
         if (set != null && !set.isEmpty()) {
             return (User.TokenDetails) set.toArray()[0]; // Any object should be fine.
         }
-
         return null;
     }
 

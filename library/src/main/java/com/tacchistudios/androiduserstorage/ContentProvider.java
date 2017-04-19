@@ -87,10 +87,11 @@ public class ContentProvider extends android.content.ContentProvider {
                 setupUserStorage(); // We need to do this here, as the Application doesn't get setup before this.
             }
 
+            Log.d(TAG, "Request to log out through ContentProvider: " + getContext().getPackageName());
+
             if (User.getInstance().oAuthToken() != null) {
                 Log.d(TAG, "Logging out through ContentProvider: " + getContext().getPackageName());
                 User.getInstance().logout();
-                // TODO: How do we do all the other bits? Like clearing products etc.
 
                 return 1;
             }

@@ -1,7 +1,5 @@
 package com.tacchistudios.androiduserstorage;
 
-import java.util.Set;
-
 public class User {
     private static final String TAG = User.class.getSimpleName();
 
@@ -37,6 +35,32 @@ public class User {
         storage.setTokenDetails(null, null, null);
     }
 
+    public enum LoginState {
+        NO_TOKEN,
+        NO_TOKEN_AND_EXCHANGABLE_TOKEN_AVAILABLE,
+        ANON_TOKEN_ONLY,
+        ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE,
+        USER_TOKEN
+    }
+
+    public LoginState getLoginState() {
+        LoginState result = LoginState.NO_TOKEN;
+
+        if (isLoggedIn()) {
+            result = LoginState.USER_TOKEN;
+        } else if (oAuthToken() != null) {
+            if (storage.areExchangableTokensAvailable()) {
+                result = LoginState.ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
+            } else {
+                result = LoginState.ANON_TOKEN_ONLY;
+            }
+        } else if (storage.areExchangableTokensAvailable()) {
+            return LoginState.NO_TOKEN_AND_EXCHANGABLE_TOKEN_AVAILABLE;
+        }
+
+        return result;
+    }
+
     public interface Storage {
         String TOKEN = "token";
         String EMAIL = "email";
@@ -48,7 +72,9 @@ public class User {
         String getEmail();
         String getPassword();
 
-        Set<TokenDetails> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp();
+        boolean areExchangableTokensAvailable();
+
+        TokenDetails anyAvailableExchangeableTokenDetails();
     }
 
 //    public static class OAuthRequest {

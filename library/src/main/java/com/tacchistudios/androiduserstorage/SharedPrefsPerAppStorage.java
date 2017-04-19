@@ -112,7 +112,6 @@ public class SharedPrefsPerAppStorage implements User.Storage {
         }
     }
 
-    @Override
     @Nullable
     public Set<User.TokenDetails> tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp() {
         Set<User.TokenDetails> tokenDetailsSet = new HashSet<>();
@@ -144,6 +143,19 @@ public class SharedPrefsPerAppStorage implements User.Storage {
         return null;
     }
 
+    @Override
+    public boolean areExchangableTokensAvailable() {
+        return anyAvailableExchangeableTokenDetails() != null;
+    }
+    //    public User.TokenDetails tokenDetailsThatCanBeExchangedForTokenForCurrentApp() {
+    public User.TokenDetails anyAvailableExchangeableTokenDetails() {
+        Set<User.TokenDetails> set = tokenDetailsForSeparatedAppsThatCanBeExchangedForTokenForCurrentApp();
+        if (set != null && !set.isEmpty()) {
+            return (User.TokenDetails) set.toArray()[0]; // Any object should be fine.
+        }
+
+        return null;
+    }
     @NonNull
     private Set<String> appIDsForSeparatedAppsWithTokens() {
         Set<String> set = prefs().getStringSet(APP_IDS_PREFS_NAME, new HashSet<String>());
