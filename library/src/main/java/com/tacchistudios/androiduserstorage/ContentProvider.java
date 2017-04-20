@@ -9,12 +9,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import com.tacchistudios.androiduserstorage.User;
-
-import static com.tacchistudios.androiduserstorage.User.Storage.EMAIL;
-import static com.tacchistudios.androiduserstorage.User.Storage.PASSWORD;
-import static com.tacchistudios.androiduserstorage.User.Storage.TOKEN;
-
 public class ContentProvider extends android.content.ContentProvider {
     private static final String TAG = ContentProvider.class.getSimpleName();
 
@@ -67,7 +61,7 @@ public class ContentProvider extends android.content.ContentProvider {
 
                 Log.d(TAG, "User logged in, so sharing with other app: " + User.getInstance().oAuthToken());
 
-                MatrixCursor cursor = new MatrixCursor(new String[]{"package", TOKEN, EMAIL, PASSWORD}); // Is package needed?
+                MatrixCursor cursor = new MatrixCursor(new String[]{"package", User.Storage.TOKEN, User.Storage.EMAIL, User.Storage.PASSWORD}); // Is package needed?
 
                 // Get details from prefs
                 User.Storage storage = User.getInstance().getStorage();

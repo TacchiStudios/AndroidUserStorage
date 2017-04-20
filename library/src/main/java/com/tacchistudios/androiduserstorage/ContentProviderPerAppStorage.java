@@ -18,20 +18,14 @@ import java.util.List;
 import java.util.Set;
 
 
-public class ContentProviderPerAppStorage implements User.Storage {
+public class ContentProviderPerAppStorage extends User.Storage {
     private static final String TAG = ContentProviderPerAppStorage.class.getSimpleName();
-
-    private Context context;
-    public Context getContext() {
-        return context;
-    }
 
     public ContentProviderPerAppStorage(Context _context) {
         context = _context;
     }
 
-    @Override
-    public void setTokenDetails(String token, String email, String password) {
+    protected void storeTokenDetails(String token, String email, String password) {
         Log.d(TAG, "setTokenDetails: " + token);
 
         if (token == null) {
@@ -41,8 +35,12 @@ public class ContentProviderPerAppStorage implements User.Storage {
 
         HashMap<String, String> details = new HashMap<>();
         details.put(TOKEN, token);
-        details.put(EMAIL, email);
-        details.put(PASSWORD, password);
+        if (email != null) {
+            details.put(EMAIL, email);
+        }
+        if (password != null) {
+            details.put(PASSWORD, password);
+        }
 
         JSONObject jsonDetails = new JSONObject(details);
         String jsonString = jsonDetails.toString();

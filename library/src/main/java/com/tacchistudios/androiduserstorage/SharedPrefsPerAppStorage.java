@@ -14,7 +14,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-public class SharedPrefsPerAppStorage implements User.Storage {
+public class SharedPrefsPerAppStorage extends User.Storage {
     private static final String TAG = SharedPrefsPerAppStorage.class.getSimpleName();
 
     private final String APP_IDS_PREFS_NAME = "com.tacchistudios.user.storage.app_ids"; // Both the name of the sharedprefs for the apps, and the key for the array of IDs that are logged in
@@ -30,7 +30,7 @@ public class SharedPrefsPerAppStorage implements User.Storage {
     }
 
     @Override
-    public void setTokenDetails(String token, String email, String password) {
+    public void storeTokenDetails(String token, String email, String password) {
         Log.d(TAG, "setTokenDetails: " + token);
 
         if (token == null) {

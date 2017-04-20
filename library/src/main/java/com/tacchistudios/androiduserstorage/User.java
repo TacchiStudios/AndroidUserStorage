@@ -1,7 +1,15 @@
 package com.tacchistudios.androiduserstorage;
 
+import android.content.Context;
+import android.content.Intent;
+
 public class User {
     private static final String TAG = User.class.getSimpleName();
+
+    public static final String BROADCAST_LOGIN_STATE_CHANGED = "com.tacchistudios.androiduserstorage.LOGIN_STATE_CHANGED";
+    public static final String EXTRA_PREVIOUS_STATE = "previous_state";
+    public static final String EXTRA_NEW_STATE = "new_state";
+    public static final String EXTRA_SENDER_ID = "sender_id";
 
     private static User ourInstance = new User();
     public static User getInstance() {
@@ -37,7 +45,7 @@ public class User {
 
     public enum LoginState {
         NO_TOKEN,
-        NO_TOKEN_AND_EXCHANGABLE_TOKEN_AVAILABLE,
+        NO_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE,
         ANON_TOKEN_ONLY,
         ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE,
         USER_TOKEN
@@ -55,26 +63,47 @@ public class User {
                 result = LoginState.ANON_TOKEN_ONLY;
             }
         } else if (storage.areExchangableTokensAvailable()) {
-            return LoginState.NO_TOKEN_AND_EXCHANGABLE_TOKEN_AVAILABLE;
+            return LoginState.NO_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
         }
 
         return result;
     }
 
-    public interface Storage {
-        String TOKEN = "token";
-        String EMAIL = "email";
-        String PASSWORD = "password";
+    public abstract static class Storage {
+        public static final String TOKEN = "token";
+        public static final String EMAIL = "email";
+        public static final String PASSWORD = "password";
 
-        void setTokenDetails(String token, String email, String password);
+        protected Context context;
+        public Context getContext() {
+        return context;
+    }
+        public void setContext(Context context) {
+            this.context = context;
+        }
 
-        String getToken();
-        String getEmail();
-        String getPassword();
+        public void setTokenDetails(String token, String email, String password){
+            LoginState previousState = User.getInstance().getLoginState();
+            storeTokenDetails(token, email, password);
+            LoginState newState = User.getInstance().getLoginState();
+            if (previousState != newState) {
+                Intent intent = new Intent(BROADCAST_LOGIN_STATE_CHANGED);
+                intent.putExtra(EXTRA_PREVIOUS_STATE, previousState);
+                intent.putExtra(EXTRA_NEW_STATE, newState);
+                intent.putExtra(EXTRA_SENDER_ID, context.getPackageName());
+                context.sendBroadcast(intent);
+            }
+        }
 
-        boolean areExchangableTokensAvailable();
+        protected abstract void storeTokenDetails(String token, String email, String password);
 
-        TokenDetails anyAvailableExchangeableTokenDetails();
+        public abstract String getToken();
+        public abstract String getEmail();
+        public abstract String getPassword();
+
+        public abstract boolean areExchangableTokensAvailable();
+
+        public abstract TokenDetails anyAvailableExchangeableTokenDetails();
     }
 
 //    public static class OAuthRequest {
