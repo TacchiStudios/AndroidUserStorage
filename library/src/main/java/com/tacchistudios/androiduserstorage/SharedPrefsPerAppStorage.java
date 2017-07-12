@@ -30,7 +30,7 @@ public class SharedPrefsPerAppStorage extends User.Storage {
     }
 
     @Override
-    public void storeTokenDetails(String token, String email, String password) {
+    protected void storeTokenDetails(String token, String email, String password) {
         Log.d(TAG, "setTokenDetails: " + token);
 
         if (token == null) {

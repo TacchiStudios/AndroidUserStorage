@@ -26,7 +26,7 @@ public class ContentProviderPerAppStorage extends User.Storage {
     }
 
     protected void storeTokenDetails(String token, String email, String password) {
-        Log.d(TAG, "setTokenDetails: " + token);
+        Log.d(TAG, "storeTokenDetails: " + token);
 
         if (token == null) {
             clearAllTokens();
