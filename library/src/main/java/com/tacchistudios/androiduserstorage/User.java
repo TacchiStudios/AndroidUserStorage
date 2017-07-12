@@ -1,12 +1,23 @@
 package com.tacchistudios.androiduserstorage;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.util.Log;
+
+import static com.tacchistudios.androiduserstorage.User.LoginState.ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
+import static com.tacchistudios.androiduserstorage.User.LoginState.ANON_TOKEN_ONLY;
+import static com.tacchistudios.androiduserstorage.User.LoginState.NO_TOKEN;
+import static com.tacchistudios.androiduserstorage.User.LoginState.NO_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
+import static com.tacchistudios.androiduserstorage.User.LoginState.USER_TOKEN;
 
 public class User {
     private static final String TAG = User.class.getSimpleName();
 
-    public static final String BROADCAST_LOGIN_STATE_CHANGED = "com.tacchistudios.androiduserstorage.LOGIN_STATE_CHANGED";
+    public static final String BROADCAST_LOGIN_STATE_DID_CHANGE     = "com.tacchistudios.androiduserstorage.LOGIN_STATE_DID_CHANGE";
+    public static final String BROADCAST_LOGIN_STATE_WILL_CHANGE    = "com.tacchistudios.androiduserstorage.LOGIN_STATE_WILL_CHANGE";
+
     public static final String EXTRA_PREVIOUS_STATE = "previous_state";
     public static final String EXTRA_NEW_STATE = "new_state";
     public static final String EXTRA_SENDER_ID = "sender_id";
@@ -39,7 +50,30 @@ public class User {
         storage.setTokenDetails(token, email, password);
     }
 
-    public void logout() {
+    public void logout(Context context, int title, int message, int logout, int cancel) {
+
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context);
+
+        alertDialogBuilder
+                .setTitle(title)
+                .setMessage(message)
+                .setCancelable(true)
+                .setPositiveButton(logout, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        performLogoutWithoutConfirmation();
+                    }
+                })
+                .setNegativeButton(cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.show();
+    }
+
+    public void performLogoutWithoutConfirmation() {
+        // TODO: notify will logout
         storage.setTokenDetails(null, null, null);
     }
 
@@ -52,18 +86,18 @@ public class User {
     }
 
     public LoginState getLoginState() {
-        LoginState result = LoginState.NO_TOKEN;
+        LoginState result = NO_TOKEN;
 
         if (isLoggedIn()) {
-            result = LoginState.USER_TOKEN;
+            result = USER_TOKEN;
         } else if (oAuthToken() != null) {
             if (storage.areExchangableTokensAvailable()) {
-                result = LoginState.ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
+                result = ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
             } else {
-                result = LoginState.ANON_TOKEN_ONLY;
+                result = ANON_TOKEN_ONLY;
             }
         } else if (storage.areExchangableTokensAvailable()) {
-            return LoginState.NO_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
+            return NO_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE;
         }
 
         return result;
@@ -82,12 +116,36 @@ public class User {
             this.context = context;
         }
 
+        private boolean willLoginStateChange(LoginState currentState, String token, String email) {
+            switch (currentState) {
+                case NO_TOKEN:
+                case NO_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE:
+                    return token != null;
+                case ANON_TOKEN_ONLY:
+                case ANON_TOKEN_AND_EXCHANGEABLE_TOKEN_AVAILABLE:
+                    return email != null;
+                case USER_TOKEN:
+                    return token == null;
+                default:
+                    return false;
+            }
+        }
+
         public void setTokenDetails(String token, String email, String password){
             LoginState previousState = User.getInstance().getLoginState();
+
+            if (willLoginStateChange(previousState, token, email)) {
+                Intent intent = new Intent(BROADCAST_LOGIN_STATE_WILL_CHANGE);
+                intent.putExtra(EXTRA_PREVIOUS_STATE, previousState);
+                intent.putExtra(EXTRA_SENDER_ID, context.getPackageName());
+                context.sendBroadcast(intent);
+            }
+
             storeTokenDetails(token, email, password);
+
             LoginState newState = User.getInstance().getLoginState();
             if (previousState != newState) {
-                Intent intent = new Intent(BROADCAST_LOGIN_STATE_CHANGED);
+                Intent intent = new Intent(BROADCAST_LOGIN_STATE_DID_CHANGE);
                 intent.putExtra(EXTRA_PREVIOUS_STATE, previousState);
                 intent.putExtra(EXTRA_NEW_STATE, newState);
                 intent.putExtra(EXTRA_SENDER_ID, context.getPackageName());

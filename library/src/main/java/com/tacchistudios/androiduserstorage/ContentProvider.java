@@ -85,7 +85,7 @@ public class ContentProvider extends android.content.ContentProvider {
 
             if (User.getInstance().oAuthToken() != null) {
                 Log.d(TAG, "Logging out through ContentProvider: " + getContext().getPackageName());
-                User.getInstance().logout();
+                User.getInstance().performLogoutWithoutConfirmation();
 
                 return 1;
             }
