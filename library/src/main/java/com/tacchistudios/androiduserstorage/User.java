@@ -73,7 +73,6 @@ public class User {
     }
 
     public void performLogoutWithoutConfirmation() {
-        // TODO: notify will logout
         storage.setTokenDetails(null, null, null);
     }
 
